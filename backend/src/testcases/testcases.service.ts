@@ -107,7 +107,7 @@ export class TestcasesService {
     const existing = await this.prisma.masterTestcase.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Testcase not found');
 
-    if (userRole === 'Admin' || userRole === 'Leader') {
+    if (userRole === 'Super Admin' || userRole === 'Tech Lead' || userRole === 'BA') {
       // Hard delete
       return this.prisma.masterTestcase.delete({ where: { id } });
     } else {

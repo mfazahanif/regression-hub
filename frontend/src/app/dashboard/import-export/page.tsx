@@ -1,10 +1,8 @@
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { ImportExportTC } from '@/components/dashboard/ImportExportTC';
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
 
 export const metadata = {
-  title: 'Import / Export Test Case - CoreQA',
+  title: 'Import / Export Test Case - Regression Hub',
 };
 
 export default function ImportExportPage() {
@@ -26,7 +24,6 @@ export default function ImportExportPage() {
                 </div>
               </div>
             </div>
-            <LogoutButton />
           </header>
 
           <ImportExportTC />

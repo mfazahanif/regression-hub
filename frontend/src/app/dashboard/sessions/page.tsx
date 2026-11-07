@@ -1,7 +1,4 @@
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import Link from 'next/link';
 import { SessionsTable } from '@/components/dashboard/SessionsTable';
 
@@ -45,11 +42,6 @@ export default async function SessionsHistoryPage() {
             <div>
               <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="sessions-header-title">Execution Log</h1>
               <p className="text-indigo-200 font-medium text-sm mt-0.5">Manage and view all testing sessions</p>
-            </div>
-            <div className="flex items-center gap-4">
-               <HeaderProfile />
-               <NotificationBell />
-               <LogoutButton />
             </div>
           </header>
 

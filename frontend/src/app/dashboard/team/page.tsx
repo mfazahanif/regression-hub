@@ -1,7 +1,4 @@
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { TeamManagement } from '@/components/dashboard/TeamManagement';
 import { cookies } from 'next/headers';
 
@@ -47,7 +44,6 @@ export default async function TeamPage() {
                 </div>
               </div>
             </div>
-            <LogoutButton />
           </header>
 
           <TeamManagement initialUsers={users} initialRoles={roles} initialStatuses={statuses} />

@@ -1,7 +1,4 @@
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { ExecutionTable } from '@/components/dashboard/ExecutionTable';
 import Link from 'next/link';
 import { BackButton } from '@/components/dashboard/BackButton';
@@ -49,11 +46,6 @@ export default async function ExecutionMenuPage({ params }: { params: Promise<{ 
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <HeaderProfile />
-              <NotificationBell />
-              <LogoutButton />
             </div>
           </header>
 

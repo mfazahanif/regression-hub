@@ -27,8 +27,8 @@ export function TeamManagement({ initialUsers, initialRoles, initialStatuses }: 
     }
   }, []);
 
-  const isAdmin = currentUser?.role === 'Admin';
-  const isLeader = currentUser?.role === 'Leader';
+  const isAdmin = currentUser?.role === 'Super Admin';
+  const isLeader = ['Tech Lead', 'BA'].includes(currentUser?.role);
   const canEditUser = isAdmin || isLeader;
 
   const refreshData = async () => {
@@ -61,7 +61,7 @@ export function TeamManagement({ initialUsers, initialRoles, initialStatuses }: 
     const method = editingItem ? 'PUT' : 'POST';
     const url = editingItem ? `${baseUrl}/master/users/${editingItem.id}` : `${baseUrl}/master/users`;
 
-    // Leader can only send isActive, but for simplicity we send what form gives. API will process or fail based on guard.
+    // Tech Leads and BAs can only send isActive, but for simplicity we send what form gives. API will process or fail based on guard.
     // Wait, leader can only update. We shouldn't send password if empty.
     if (!data.password) delete data.password;
 
@@ -125,13 +125,14 @@ export function TeamManagement({ initialUsers, initialRoles, initialStatuses }: 
 
   const filteredUsers = users
     .filter((u: any) => {
-      // Hide Admin if current user is not Admin and not Leader
-      if (u.role?.name === 'Admin' && !isAdmin && !isLeader) return false;
+      // Hide Super Admin if current user is not Super Admin or a delegated lead
+      if (u.role?.name === 'Super Admin' && !isAdmin) return false;
       return u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase());
     })
     .sort((a: any, b: any) => {
-      if (a.role?.name === 'Leader' && b.role?.name !== 'Leader') return -1;
-      if (a.role?.name !== 'Leader' && b.role?.name === 'Leader') return 1;
+      const leadRoles = ['Tech Lead', 'BA'];
+      if (leadRoles.includes(a.role?.name) && !leadRoles.includes(b.role?.name)) return -1;
+      if (!leadRoles.includes(a.role?.name) && leadRoles.includes(b.role?.name)) return 1;
       return a.name.localeCompare(b.name);
     });
   const filteredRoles = roles.filter((r: any) => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -175,10 +176,10 @@ export function TeamManagement({ initialUsers, initialRoles, initialStatuses }: 
               </button>
             )}
             {(() => {
-              const admins = filteredUsers.filter((u: any) => u.role?.name === 'Admin');
-              const leaders = filteredUsers.filter((u: any) => u.role?.name === 'Leader');
+              const admins = filteredUsers.filter((u: any) => u.role?.name === 'Super Admin');
+              const leaders = filteredUsers.filter((u: any) => ['Tech Lead', 'BA'].includes(u.role?.name));
               const qaMembers = filteredUsers.filter((u: any) => u.role?.name === 'QA Member');
-              const others = filteredUsers.filter((u: any) => !['Admin', 'Leader', 'QA Member'].includes(u.role?.name));
+              const others = filteredUsers.filter((u: any) => !['Super Admin', 'Tech Lead', 'BA', 'QA Member'].includes(u.role?.name));
 
               const renderGroup = (groupUsers: any[], title: string) => {
                 if (groupUsers.length === 0) return null;
@@ -193,7 +194,7 @@ export function TeamManagement({ initialUsers, initialRoles, initialStatuses }: 
                               <span className="text-xl font-black text-white">{user.name.substring(0,2).toUpperCase()}</span>
                             </div>
                             <div className="flex flex-row items-center gap-3">
-                              <span data-testid={`team-user-role-${user.id}`} className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold border ${user.role?.name === 'Leader' ? 'bg-amber-500/20 border-amber-500/30 text-amber-300' : user.role?.name === 'Admin' ? 'bg-rose-500/20 border-rose-500/30 text-rose-300' : 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300'}`}>
+                              <span data-testid={`team-user-role-${user.id}`} className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold border ${['Tech Lead', 'BA'].includes(user.role?.name) ? 'bg-amber-500/20 border-amber-500/30 text-amber-300' : user.role?.name === 'Super Admin' ? 'bg-rose-500/20 border-rose-500/30 text-rose-300' : 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300'}`}>
                                 {user.role?.name}
                               </span>
                               <div className="flex items-center gap-1.5">
@@ -244,8 +245,8 @@ export function TeamManagement({ initialUsers, initialRoles, initialStatuses }: 
 
               return (
                 <>
-                  {renderGroup(admins, 'Admin')}
-                  {renderGroup(leaders, 'Leader')}
+                  {renderGroup(admins, 'Super Admin')}
+                  {renderGroup(leaders, 'Tech Lead / BA')}
                   {renderGroup(qaMembers, 'QA Member')}
                   {renderGroup(others, 'Other Roles')}
                 </>

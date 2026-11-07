@@ -1,8 +1,5 @@
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { ModuleProgress } from '@/components/dashboard/ModuleProgress';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 
 async function fetchAnalytics(sessionId: string) {
@@ -36,12 +33,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ sess
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="session-analytics-header-title">CoreQA Analytics</h1>
+                  <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="session-analytics-header-title">Regression Hub Analytics</h1>
                   <p className="text-indigo-200 font-medium text-sm mt-0.5">Real-time Session Monitoring</p>
                 </div>
               </div>
             </div>
-            <LogoutButton />
           </header>
 
           

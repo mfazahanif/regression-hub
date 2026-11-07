@@ -1,10 +1,8 @@
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
 import { Sidebar } from '@/components/dashboard/Sidebar';
+import { NewSessionButton } from '@/components/dashboard/NewSessionButton';
 import { UserAssignments } from '@/components/dashboard/UserAssignments';
 import { SessionSelector } from '@/components/dashboard/SessionSelector';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { ExecutionChart } from '@/components/dashboard/ExecutionChart';
 import { ModuleList } from '@/components/dashboard/ModuleList';
 
@@ -116,12 +114,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center gap-4">
-               <HeaderProfile />
-               <NotificationBell />
-               <LogoutButton />
-            </div>
+            <NewSessionButton />
           </header>
 
           

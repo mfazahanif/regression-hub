@@ -1,7 +1,4 @@
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { ModuleManagement } from '@/components/dashboard/ModuleManagement';
 import { Suspense } from 'react';
 
@@ -26,11 +23,6 @@ export default function ModulesPage() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-               <HeaderProfile />
-               <NotificationBell />
-               <LogoutButton />
-            </div>
           </header>
 
           <Suspense fallback={<div className=" h-96 bg-white/5 rounded-2xl"></div>}>

@@ -59,7 +59,7 @@ export class TestcasesController {
 
   @Delete(':id')
   async remove(@Request() req: any, @Param('id') id: string) {
-    return { data: await this.testcasesService.remove(req.user.id, req.user.role, id) };
+    return { data: await this.testcasesService.remove(req.user.id, req.user.roleName, id) };
   }
 
   @Post(':id/revive')

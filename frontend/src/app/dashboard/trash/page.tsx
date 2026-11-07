@@ -1,11 +1,8 @@
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { TrashManagement } from '@/components/dashboard/TrashManagement';
 
 export const metadata = {
-  title: 'Trash - CoreQA',
+  title: 'Trash - Regression Hub',
 };
 
 export default function TrashPage() {
@@ -31,12 +28,6 @@ export default function TrashPage() {
                   </p>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <HeaderProfile />
-               <NotificationBell />
-              <div className="h-8 w-px bg-white/20"></div>
-              <LogoutButton />
             </div>
           </header>
 

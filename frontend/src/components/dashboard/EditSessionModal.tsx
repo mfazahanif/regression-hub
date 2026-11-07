@@ -110,7 +110,7 @@ export function EditSessionModal({ isOpen, onClose, session }: { isOpen: boolean
       const userData = await userRes.json();
       
       setEnvironments(envData.data || []);
-      setQaMembers((userData.data || []).filter((u: any) => u.role?.name === 'QA Member' || u.role?.name === 'Leader'));
+      setQaMembers((userData.data || []).filter((u: any) => ['QA Member', 'Tech Lead', 'BA'].includes(u.role?.name)));
       if (envData.data?.length > 0) {
         setEnvironmentId(envData.data[0].id.toString());
       }

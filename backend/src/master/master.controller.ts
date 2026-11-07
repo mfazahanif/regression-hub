@@ -21,21 +21,21 @@ export class MasterController {
     return { data };
   }
 
-  @Roles('Admin')
+  @Roles('Super Admin')
   @Post('statuses')
   async createStatus(@Body() data: any) {
     const result = await this.masterService.createStatus(data);
     return { data: result };
   }
 
-  @Roles('Admin')
+  @Roles('Super Admin')
   @Put('statuses/:id')
   async updateStatus(@Param('id') id: string, @Body() data: any) {
     const result = await this.masterService.updateStatus(Number(id), data);
     return { data: result };
   }
 
-  @Roles('Admin')
+  @Roles('Super Admin')
   @Delete('statuses/:id')
   async deleteStatus(@Param('id') id: string) {
     const result = await this.masterService.deleteStatus(Number(id));
@@ -54,28 +54,28 @@ export class MasterController {
     return { data };
   }
 
-  @Roles('Admin', 'Leader')
+  @Roles('Super Admin', 'Tech Lead', 'BA')
   @Post('users')
   async createUser(@Body() data: any, @Request() req: any) {
-    if (req.user.roleName === 'Leader') {
+    if (['Tech Lead', 'BA'].includes(req.user.roleName)) {
       const roles = await this.masterService.getRoles();
       const qaRole = roles.find((r: any) => r.name === 'QA Member');
       if (!qaRole || Number(data.roleId) !== qaRole.id) {
-        throw new ForbiddenException('Leaders can only create QA Member');
+        throw new ForbiddenException('Tech Leads and BAs can only create QA Member');
       }
     }
     const result = await this.masterService.createUser(data);
     return { data: result };
   }
 
-  @Roles('Admin', 'Leader')
+  @Roles('Super Admin', 'Tech Lead', 'BA')
   @Put('users/:id')
   async updateUser(@Param('id') id: string, @Body() data: any, @Request() req: any) {
     let allowedData = data;
-    if (req.user.roleName === 'Leader') {
+    if (['Tech Lead', 'BA'].includes(req.user.roleName)) {
       const targetRole = await this.masterService.getUserRole(id);
       if (targetRole !== 'QA Member') {
-        throw new ForbiddenException('Leaders can only edit QA Member');
+        throw new ForbiddenException('Tech Leads and BAs can only edit QA Member');
       }
       allowedData = { isActive: data.isActive };
     }
@@ -83,13 +83,13 @@ export class MasterController {
     return { data: result };
   }
 
-  @Roles('Admin', 'Leader')
+  @Roles('Super Admin', 'Tech Lead', 'BA')
   @Delete('users/:id')
   async deleteUser(@Param('id') id: string, @Request() req: any) {
-    if (req.user.roleName === 'Leader') {
+    if (['Tech Lead', 'BA'].includes(req.user.roleName)) {
       const targetRole = await this.masterService.getUserRole(id);
       if (targetRole !== 'QA Member') {
-        throw new ForbiddenException('Leaders can only delete QA Member');
+        throw new ForbiddenException('Tech Leads and BAs can only delete QA Member');
       }
     }
     const result = await this.masterService.deleteUser(id);
@@ -102,21 +102,21 @@ export class MasterController {
     return { data };
   }
 
-  @Roles('Admin')
+  @Roles('Super Admin')
   @Post('roles')
   async createRole(@Body() data: any) {
     const result = await this.masterService.createRole(data);
     return { data: result };
   }
 
-  @Roles('Admin')
+  @Roles('Super Admin')
   @Put('roles/:id')
   async updateRole(@Param('id') id: string, @Body() data: any) {
     const result = await this.masterService.updateRole(Number(id), data);
     return { data: result };
   }
 
-  @Roles('Admin')
+  @Roles('Super Admin')
   @Delete('roles/:id')
   async deleteRole(@Param('id') id: string) {
     const result = await this.masterService.deleteRole(Number(id));

@@ -10,8 +10,8 @@ export class SessionsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async createSession(@Request() req: any, @Body() dto: CreateSessionDto) {
-    if (req.user?.role === 'QA Member') {
-      throw new ForbiddenException('Only Admin or Leader can create sessions');
+    if (req.user?.roleName === 'QA Member') {
+      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can create sessions');
     }
     const data = await this.sessionsService.createSession(dto);
     return { message: 'Session created successfully', data };
@@ -24,8 +24,8 @@ export class SessionsController {
     @Request() req: any,
     @Param('id') id: string
   ) {
-    if (req.user?.role === 'QA Member') {
-      throw new ForbiddenException('Only Admin or Leader can clone sessions');
+    if (req.user?.roleName === 'QA Member') {
+      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can clone sessions');
     }
     const data = await this.sessionsService.cloneSession(id);
     return { message: 'Session cloned successfully', data };
@@ -66,8 +66,8 @@ export class SessionsController {
     @Param('id') id: string,
     @Body() dto: any
   ) {
-    if (req.user?.role === 'QA Member') {
-      throw new ForbiddenException('Only Admin or Leader can edit sessions');
+    if (req.user?.roleName === 'QA Member') {
+      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can edit sessions');
     }
     const data = await this.sessionsService.updateSession(id, dto);
     return { message: 'Session updated successfully', data };
@@ -79,8 +79,8 @@ export class SessionsController {
     @Request() req: any,
     @Param('id') id: string
   ) {
-    if (req.user?.role === 'QA Member') {
-      throw new ForbiddenException('Only Admin or Leader can delete sessions');
+    if (req.user?.roleName === 'QA Member') {
+      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can delete sessions');
     }
     const data = await this.sessionsService.deleteSession(id);
     return { message: 'Session deleted successfully', data };

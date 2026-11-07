@@ -25,11 +25,12 @@ export function LogoutButton() {
       <button 
         id="logout-btn"
         data-testid="logout-btn"
+        aria-label="Sign out"
+        title="Sign out"
         onClick={() => setShowConfirm(true)}
-        className="px-5 py-2.5 bg-rose-500/10 text-rose-300 border border-rose-500/30 rounded-xl hover:bg-rose-500/30 hover:border-rose-500/50 hover:text-white font-bold text-sm flex items-center gap-2 shadow-sm active:scale-95 transition-colors"
+        className="header-icon-button header-signout-button"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-        Sign Out
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
       </button>
 
       {showConfirm && (

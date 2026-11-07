@@ -1,7 +1,4 @@
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LogoutButton } from '@/components/dashboard/LogoutButton';
-import { NotificationBell } from '@/components/dashboard/NotificationBell';
-import { HeaderProfile } from '@/components/dashboard/HeaderProfile';
 import { ExecutionTable } from '@/components/dashboard/ExecutionTable';
 import { SessionSelector } from '@/components/dashboard/SessionSelector';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
@@ -84,12 +81,6 @@ export default async function ExecutionMenuPage({ searchParams }: { searchParams
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-               <HeaderProfile />
-               <NotificationBell />
-               <SessionSelector currentSession={resolvedParams.session} />
-               <LogoutButton />
             </div>
           </header>
 

@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash('CoreQA_2026!Sec', salt);
+  const hashedPassword = await bcrypt.hash('Telkomsel123!', salt);
 
   console.log('Menghapus data lama...');
   await prisma.claimHistory.deleteMany();
@@ -23,23 +23,25 @@ async function main() {
   console.log('Menyemai (Seeding) data baru...');
 
   // 1. Roles
-  const roleAdmin = await prisma.role.create({ data: { name: 'Admin' } });
-  const roleLeader = await prisma.role.create({ data: { name: 'Leader' } });
+  const roleSuperAdmin = await prisma.role.create({ data: { name: 'Super Admin' } });
+  const roleTechLead = await prisma.role.create({ data: { name: 'Tech Lead' } });
+  const roleBA = await prisma.role.create({ data: { name: 'BA' } });
   const roleQA = await prisma.role.create({ data: { name: 'QA Member' } });
 
-  // 2. Users (QA Team)
+  // 2. Users
   const users = await Promise.all([
-    prisma.user.create({ data: { email: 'admin@coreqa.com', name: 'Super Admin', password: hashedPassword, roleId: roleAdmin.id } }),
-    prisma.user.create({ data: { email: 'qa1@coreqa.com', name: 'Alice Smith', password: hashedPassword, roleId: roleQA.id } }),
-    prisma.user.create({ data: { email: 'qa2@coreqa.com', name: 'Bob Johnson', password: hashedPassword, roleId: roleQA.id } }),
-    prisma.user.create({ data: { email: 'qa3@coreqa.com', name: 'Charlie Lee', password: hashedPassword, roleId: roleQA.id } }),
-    prisma.user.create({ data: { email: 'lead@coreqa.com', name: 'Diana Prince', password: hashedPassword, roleId: roleLeader.id } })
+    prisma.user.create({ data: { email: 'sally@ptmitrabhakti.com', name: 'Sally', password: hashedPassword, roleId: roleSuperAdmin.id } }),
+    prisma.user.create({ data: { email: 'wilyu@ptmitrabhakti.com', name: 'Wilyu', password: hashedPassword, roleId: roleTechLead.id } }),
+    prisma.user.create({ data: { email: 'hera@ptmitrabhakti.com', name: 'Hera', password: hashedPassword, roleId: roleBA.id } }),
+    prisma.user.create({ data: { email: 'faza@ptmitrabhakti.com', name: 'Faza', password: hashedPassword, roleId: roleQA.id } })
   ]);
 
   // 3. Environment
-  const envSIT = await prisma.environment.create({ data: { name: 'SIT', description: 'System Integration Testing' } });
-  const envUAT = await prisma.environment.create({ data: { name: 'UAT', description: 'User Acceptance Testing' } });
-  const envPROD = await prisma.environment.create({ data: { name: 'PROD', description: 'Production Environment' } });
+  const envPreprod1_7443 = await prisma.environment.create({ data: { name: 'Preprod1 7443' } });
+  await prisma.environment.create({ data: { name: 'Preprod1 7447' } });
+  await prisma.environment.create({ data: { name: 'Preprod1 7449' } });
+  await prisma.environment.create({ data: { name: 'Preprod2' } });
+  const envPROD = await prisma.environment.create({ data: { name: 'Prod' } });
 
   // 4. Statuses
   const statuses = ['PASSED', 'FAILED', 'PASSED WITH NOTES', 'BLOCKED', 'DROPPED', 'TO DO'];
@@ -154,7 +156,7 @@ async function main() {
     data: {
       id: SESSION_ID,
       name: 'v2.0 Full Regression',
-      environmentId: envSIT.id,
+      environmentId: envPreprod1_7443.id,
       isOpen: true,
       status: 'On Progress',
       startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago

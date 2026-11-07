@@ -13,7 +13,7 @@ datasource db {
 
 model Role {
   id    Int    @id @default(autoincrement())
-  name  String @unique // e.g., "Super Admin", "Leader", "QA Member"
+  name  String @unique // e.g., "Super Admin", "Tech Lead", "BA", "QA Member"
   users User[]
 
   @@map("roles")

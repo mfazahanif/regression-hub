@@ -141,7 +141,7 @@ export function ModuleManagement() {
     setIsFormOpen(true);
   };
 
-  const canEdit = currentUser?.role === 'Admin' || currentUser?.role === 'Leader';
+  const canEdit = ['Super Admin', 'Tech Lead', 'BA'].includes(currentUser?.role);
 
   if (selectedModuleId) {
     return <ModuleDetail moduleId={selectedModuleId} onBack={() => setSelectedModuleId(null)} />;

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function LoginPage() {
   // const [email, setEmail] = useState('qa1@coreqa.com');
@@ -43,15 +44,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4" data-testid="login-page">
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-100 px-4" data-testid="login-page">
+      <div className="absolute right-5 top-5">
+        <ThemeToggle />
+      </div>
       
-      <div className="relative z-10 w-full max-w-md p-8 bg-slate-900 border border-slate-800 rounded-[2rem] shadow-lg" data-testid="login-card">
+      <div className="relative z-10 w-full max-w-md p-8 bg-white border border-slate-200 rounded-2xl shadow-sm" data-testid="login-card">
         <div className="mb-8 text-center">
-          <div className="w-14 h-14 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center shadow-sm mb-5" data-testid="login-brand-logo">
+          <div className="w-12 h-12 bg-indigo-600 rounded-xl mx-auto flex items-center justify-center mb-5" data-testid="login-brand-logo">
             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight" data-testid="login-title">CoreQA</h1>
-          <p className="text-slate-400 mt-2 text-sm font-medium" data-testid="login-subtitle">Masuk untuk mengelola test execution</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight" data-testid="login-title">Regression Hub</h1>
+          <p className="text-slate-500 mt-2 text-sm" data-testid="login-subtitle">Masuk untuk mengelola regression</p>
         </div>
 
         {error && (
@@ -62,7 +66,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-5" id="login-form" data-testid="login-form">
           <div>
-            <label htmlFor="login-email-input" className="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+            <label htmlFor="login-email-input" className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
             <input 
               id="login-email-input"
               data-testid="login-email-input"
@@ -70,15 +74,15 @@ export default function LoginPage() {
               type="email" 
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-black/20 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-              placeholder="you@coreqa.com"
+              className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              placeholder="you@example.com"
               autoComplete="off"
               required
             />
           </div>
           
           <div>
-            <label htmlFor="login-password-input" className="block text-sm font-medium text-slate-400 mb-2">Password</label>
+            <label htmlFor="login-password-input" className="block text-sm font-medium text-slate-700 mb-2">Password</label>
             <div className="relative">
               <input 
                 id="login-password-input"
@@ -87,7 +91,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'} 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-black/20 border border-slate-700 rounded-xl px-4 py-3 pr-12 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 pr-12 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
                 placeholder="••••••••"
                 autoComplete="new-password"
                 required
@@ -130,7 +134,7 @@ export default function LoginPage() {
         </form>
         
         <div className="mt-8 text-center text-slate-600 text-xs font-semibold tracking-wide uppercase">
-          Secure QA Orchestration Platform
+          Internal QA - PT. Mitra Bhakti Informasi
         </div>
       </div>
     </div>

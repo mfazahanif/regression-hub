@@ -9,7 +9,7 @@ export class ModulesController {
 
   @Post()
   async create(@Request() req: any, @Body() createModuleDto: any) {
-    if (req.user.role === 'QA Member') throw new ForbiddenException('Only Admin or Leader can create modules');
+    if (req.user.roleName === 'QA Member') throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can create modules');
     return { data: await this.modulesService.create(createModuleDto) };
   }
 
@@ -33,13 +33,13 @@ export class ModulesController {
 
   @Put(':id')
   async update(@Request() req: any, @Param('id') id: string, @Body() updateModuleDto: any) {
-    if (req.user.role === 'QA Member') throw new ForbiddenException('Only Admin or Leader can update modules');
+    if (req.user.roleName === 'QA Member') throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can update modules');
     return { data: await this.modulesService.update(id, updateModuleDto) };
   }
 
   @Delete(':id')
   async remove(@Request() req: any, @Param('id') id: string) {
-    if (req.user.role === 'QA Member') throw new ForbiddenException('Only Admin or Leader can delete modules');
+    if (req.user.roleName === 'QA Member') throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can delete modules');
     return { data: await this.modulesService.remove(id) };
   }
 }
