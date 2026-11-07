@@ -116,3 +116,4 @@ Thumbs.db
 
 # Custom folders
 guidelines/
+package-lock.json
