@@ -20,7 +20,7 @@ export function CloneSessionButton({ sessionId }: { sessionId: string }) {
     }
   }, []);
 
-  if (role === null || role === 'QA Member') return null;
+  if (role === null) return null;
 
   const handleClone = async () => {
     setIsCloning(true);

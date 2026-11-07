@@ -18,7 +18,6 @@ export default function TasksPage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="tasks-header-title">My Tasks</h1>
-                  <p className="text-indigo-200 font-medium text-sm mt-0.5">Manage and execute your assigned modules</p>
                 </div>
               </div>
             </div>

@@ -40,7 +40,6 @@ export default async function TeamPage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="team-header-title">Team Management</h1>
-                  <p className="text-indigo-200 font-medium text-sm mt-0.5">View and manage Accounts, Roles, and Statuses</p>
                 </div>
               </div>
             </div>

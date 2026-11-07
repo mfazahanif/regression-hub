@@ -41,7 +41,6 @@ export default async function SessionsHistoryPage() {
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900  border border-slate-700 p-6 rounded-[2rem] shadow-sm" data-testid="sessions-header">
             <div>
               <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="sessions-header-title">Execution Log</h1>
-              <p className="text-indigo-200 font-medium text-sm mt-0.5">Manage and view all testing sessions</p>
             </div>
           </header>
 

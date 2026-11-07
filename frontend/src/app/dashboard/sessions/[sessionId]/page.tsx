@@ -34,7 +34,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ sess
                 </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="session-analytics-header-title">Regression Hub Analytics</h1>
-                  <p className="text-indigo-200 font-medium text-sm mt-0.5">Real-time Session Monitoring</p>
                 </div>
               </div>
             </div>

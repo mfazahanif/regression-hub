@@ -78,7 +78,7 @@ export function TaskManagement() {
           total: summary.totalAssignedTestcases,
           ...summary.statusBreakdown,
           'TO DO': (summary.statusBreakdown?.['TO DO'] || 0) + (summary.statusBreakdown?.['UNTESTED'] || 0)
-        }} />
+        }} modules={tasks} />
       )}
 
       {/* Search Bar */}

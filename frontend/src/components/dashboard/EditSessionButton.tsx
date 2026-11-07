@@ -16,7 +16,7 @@ export function EditSessionButton({ session }: { session: any }) {
     }
   }, []);
 
-  if (!session || session.status === 'Finished' || session.status === 'Done' || !currentUser || currentUser.role === 'QA Member') return null;
+  if (!session || session.status === 'Finished' || session.status === 'Done' || !currentUser) return null;
 
   return (
     <>

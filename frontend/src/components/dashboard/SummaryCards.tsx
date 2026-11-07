@@ -1,36 +1,71 @@
-import React from 'react';
+'use client';
 
-export function SummaryCards({ summary }: { summary: any }) {
+import { useState } from 'react';
+import { getModuleSummary } from '@/utils/module-summary';
+import { useAnalyticsView, type AnalyticsView } from './AnalyticsViewContext';
+
+export function SummaryCards({ summary, modules }: { summary: any; modules?: any[] }) {
+  const analyticsView = useAnalyticsView();
+  const [localView, setLocalView] = useState<AnalyticsView>(modules ? 'module' : 'testcase');
+  const view = analyticsView?.view ?? localView;
+  const setView = analyticsView?.setView ?? setLocalView;
+  const moduleSummary = getModuleSummary(modules || []);
+  const shownSummary = view === 'module' && modules ? moduleSummary : summary;
   const getPercentage = (count: number) => {
-    if (!summary || !summary.total || summary.total === 0) return 0;
-    return Math.round((count / summary.total) * 100);
+    if (!shownSummary || !shownSummary.total || shownSummary.total === 0) return 0;
+    return Math.round((count / shownSummary.total) * 100);
   };
 
-  const total = summary?.total || 0;
-  const passed = summary?.['PASSED'] || 0;
-  const passedNotes = summary?.['PASSED WITH NOTES'] || 0;
-  const failed = summary?.['FAILED'] || 0;
-  const blocked = summary?.['BLOCKED'] || 0;
-  const dropped = summary?.['DROPPED'] || 0;
-  const todo = summary?.['TO DO'] || 0;
-  
-  const completed = total - todo;
-  const effectiveTotal = total - dropped;
+  const total = shownSummary?.total || 0;
+  const passed = shownSummary?.['PASSED'] || 0;
+  const passedNotes = shownSummary?.['PASSED WITH NOTES'] || 0;
+  const failed = shownSummary?.['FAILED'] || 0;
+  const blocked = shownSummary?.['BLOCKED'] || 0;
+  const dropped = shownSummary?.['DROPPED'] || 0;
+  const todo = shownSummary?.['TO DO'] || 0;
+  const completed = view === 'module' && modules ? shownSummary.executed : total - todo;
+  const effectiveTotal = view === 'module' && modules ? completed - dropped : total - dropped;
   const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const passRate = effectiveTotal > 0 ? Math.round(((passed + passedNotes) / effectiveTotal) * 100) : 0;
 
   return (
-    <div className="p-6 rounded-[2rem] bg-indigo-950/20  border border-indigo-500/20 shadow-sm relative overflow-hidden group" data-testid="summary-cards">
+    <div className="p-4 sm:p-6 rounded-[2rem] bg-indigo-950/20 border border-indigo-500/20 shadow-sm relative overflow-hidden group" data-testid="summary-cards">
       
       
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 relative z-10">
+        <span className="text-indigo-200 font-bold text-sm tracking-wide uppercase">Summary by {view === 'module' && modules ? 'module' : 'testcase'}</span>
+        {modules && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Choose summary metric">
+            <button
+              type="button"
+              aria-pressed={view === 'module'}
+              data-testid="summary-view-module-btn"
+              onClick={() => setView('module')}
+              className={`min-h-11 cursor-pointer rounded-lg border px-4 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 focus-visible:ring-2 focus-visible:ring-indigo-300 ${view === 'module' ? 'border-indigo-300 bg-indigo-500/30 text-white' : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 active:bg-slate-600'}`}
+            >
+              By module
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === 'testcase'}
+              data-testid="summary-view-testcase-btn"
+              onClick={() => setView('testcase')}
+              className={`min-h-11 cursor-pointer rounded-lg border px-4 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 focus-visible:ring-2 focus-visible:ring-indigo-300 ${view === 'testcase' ? 'border-indigo-300 bg-indigo-500/30 text-white' : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 active:bg-slate-600'}`}
+            >
+              By testcase
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
         
         {/* Main Progress Indicator */}
         <div className="flex flex-col gap-2">
-          <span className="text-indigo-200 font-bold text-sm tracking-wide uppercase">Execution Progress</span>
+          <span className="text-indigo-200 font-bold text-sm tracking-wide uppercase">{view === 'module' && modules ? 'Modules executed' : 'Testcases executed'}</span>
           <div className="flex flex-wrap items-baseline gap-3">
             <span className="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" data-testid="summary-completed-count">{completed}</span>
-            <span className="text-xl font-bold text-indigo-300/50" data-testid="summary-total-count">/ {total}</span>
+              <span className="text-xl font-bold text-indigo-300/50" data-testid="summary-total-count">/ {total}</span>
             
             <div className="ml-1 sm:ml-3 flex gap-2">
               <span className="text-indigo-200/90 font-bold bg-indigo-500/30 px-3 py-1.5 rounded-lg border border-indigo-400/30 shadow-inner" data-testid="summary-completion-pct">

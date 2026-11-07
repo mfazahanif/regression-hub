@@ -18,7 +18,6 @@ export default function ModulesPage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="modules-header-title">Module Management</h1>
-                  <p className="text-cyan-200 font-medium text-sm mt-0.5">Organize system features and testcases</p>
                 </div>
               </div>
             </div>

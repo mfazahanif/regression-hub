@@ -305,21 +305,6 @@ export class SessionsService {
 
   async updateSessionStatus(sessionId: string, status: string) {
     if (status.toUpperCase() === 'FINISHED') {
-      const executions = await this.prisma.sessionExecution.findMany({
-        where: { sessionId },
-        include: { status: true }
-      });
-      
-      const unpassed = executions.filter(e => {
-        const s = e.status.name.toUpperCase();
-        return s !== 'PASSED' && s !== 'PASSED WITH NOTES' && s !== 'DROPPED';
-      });
-
-      if (unpassed.length > 0) {
-        throw new BadRequestException('Cannot mark session as Finished. All testcases must be Passed, Passed with Notes, or Dropped.');
-      }
-      
-      // Also update endDate if it's finished
       return this.prisma.session.update({
         where: { id: sessionId },
         data: { 

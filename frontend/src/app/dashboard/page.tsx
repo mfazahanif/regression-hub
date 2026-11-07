@@ -1,10 +1,11 @@
-import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { NewSessionButton } from '@/components/dashboard/NewSessionButton';
 import { UserAssignments } from '@/components/dashboard/UserAssignments';
 import { SessionSelector } from '@/components/dashboard/SessionSelector';
 import { ExecutionChart } from '@/components/dashboard/ExecutionChart';
+import { AnalyticsViewToggle } from '@/components/dashboard/AnalyticsViewToggle';
 import { ModuleList } from '@/components/dashboard/ModuleList';
+import { AnalyticsViewProvider } from '@/components/dashboard/AnalyticsViewContext';
 
 async function fetchGlobalAnalytics(sessionId?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -88,18 +89,21 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
   if (!isSingleSessionMode) {
     activeSessionsWithAnalytics = await Promise.all(
       activeSessions.map(async (s: any) => {
-        const analytics = await fetchGlobalAnalytics(s.id);
-        return { ...s, analytics };
+        const [analytics, modules] = await Promise.all([
+          fetchGlobalAnalytics(s.id),
+          fetchSessionModules(s.id),
+        ]);
+        return { ...s, analytics, modules };
       })
     );
   }
-  
   return (
     <div className="min-h-screen relative flex bg-slate-950" id="global-dashboard-page" data-testid="global-dashboard-page">
       
 
       <Sidebar />
 
+      <AnalyticsViewProvider>
       <div className="relative z-10 flex-1 p-8 text-white font-sans overflow-y-auto" data-testid="dashboard-content">
         <div className="w-full space-y-8 pb-12">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900  border border-slate-700 p-6 rounded-[2rem] shadow-sm" data-testid="dashboard-header">
@@ -109,8 +113,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="dashboard-header-title">Execution Dashboard</h1>
-                  <p className="text-indigo-200 font-medium text-sm mt-0.5">High-Level Testing Summary</p>
+                  <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="dashboard-header-title">Dashboard</h1>
                 </div>
               </div>
             </div>
@@ -123,8 +126,8 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
             <SessionSelector currentSession={resolvedParams.session} />
           </div>
 
-          <SummaryCards summary={data.summary} />
-          
+          <AnalyticsViewToggle />
+
           {!isSingleSessionMode ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" data-testid="active-sessions-grid">
               {activeSessionsWithAnalytics.map(session => (
@@ -151,7 +154,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
                   </div>
 
                   <div className="w-full relative z-10 mb-6">
-                    <ExecutionChart summary={session.analytics.summary} />
+                    <ExecutionChart summary={session.analytics.summary} modules={session.modules} />
                   </div>
 
                   <a 
@@ -196,7 +199,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
                     </div>
                   )}
                 </div>
-                <ExecutionChart summary={data.summary} />
+                <ExecutionChart summary={data.summary} modules={sessionModules} />
               </section>
 
               {/* User assignments on the right */}
@@ -214,6 +217,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
           )}
         </div>
       </div>
+      </AnalyticsViewProvider>
     </div>
   );
 }

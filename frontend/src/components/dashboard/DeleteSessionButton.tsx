@@ -21,7 +21,7 @@ export function DeleteSessionButton({ session }: { session: any }) {
     }
   }, []);
 
-  if (!session || role === null || role === 'QA Member') return null;
+  if (!session || role === null) return null;
 
   const handleDelete = async () => {
     setIsDeleting(true);

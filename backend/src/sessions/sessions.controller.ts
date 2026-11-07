@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { SessionsService } from './sessions.service.js';
 import { CreateSessionDto } from './sessions.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -9,10 +9,7 @@ export class SessionsController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async createSession(@Request() req: any, @Body() dto: CreateSessionDto) {
-    if (req.user?.roleName === 'QA Member') {
-      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can create sessions');
-    }
+  async createSession(@Body() dto: CreateSessionDto) {
     const data = await this.sessionsService.createSession(dto);
     return { message: 'Session created successfully', data };
   }
@@ -21,12 +18,8 @@ export class SessionsController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/clone')
   async cloneSession(
-    @Request() req: any,
     @Param('id') id: string
   ) {
-    if (req.user?.roleName === 'QA Member') {
-      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can clone sessions');
-    }
     const data = await this.sessionsService.cloneSession(id);
     return { message: 'Session cloned successfully', data };
   }
@@ -62,13 +55,9 @@ export class SessionsController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async updateSession(
-    @Request() req: any,
     @Param('id') id: string,
     @Body() dto: any
   ) {
-    if (req.user?.roleName === 'QA Member') {
-      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can edit sessions');
-    }
     const data = await this.sessionsService.updateSession(id, dto);
     return { message: 'Session updated successfully', data };
   }
@@ -76,12 +65,8 @@ export class SessionsController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async deleteSession(
-    @Request() req: any,
     @Param('id') id: string
   ) {
-    if (req.user?.roleName === 'QA Member') {
-      throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can delete sessions');
-    }
     const data = await this.sessionsService.deleteSession(id);
     return { message: 'Session deleted successfully', data };
   }

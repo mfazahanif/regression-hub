@@ -9,6 +9,7 @@ import { CloneSessionButton } from '@/components/dashboard/CloneSessionButton';
 import { DeleteSessionButton } from '@/components/dashboard/DeleteSessionButton';
 import Link from 'next/link';
 import { BackButton } from '@/components/dashboard/BackButton';
+import { getModuleExecutionStatus } from '@/utils/module-summary';
 
 async function fetchGlobalAnalytics(sessionId?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -43,10 +44,8 @@ export default async function ExecutionMenuPage({ searchParams }: { searchParams
   const sessionModules = resolvedParams.session ? await fetchSessionModules(resolvedParams.session) : [];
   const currentSession = resolvedParams.session ? await fetchSessionInfo(resolvedParams.session) : null;
 
-  const total = data?.summary?.total || 0;
-  const passedCount = (data?.summary?.['PASSED'] || 0) + (data?.summary?.['PASSED WITH NOTES'] || 0);
-  const droppedCount = data?.summary?.['DROPPED'] || 0;
-  const isReady = (total - droppedCount) > 0 && passedCount === (total - droppedCount);
+  const moduleStatuses: string[] = sessionModules.map((module: any) => getModuleExecutionStatus(module));
+  const incompleteModuleCount = moduleStatuses.filter(status => status !== 'PASSED' && status !== 'PASSED WITH NOTES').length;
   
   return (
     <div className="min-h-screen relative flex bg-slate-950" id="execution-page" data-testid="execution-page">
@@ -54,7 +53,7 @@ export default async function ExecutionMenuPage({ searchParams }: { searchParams
 
       <Sidebar />
 
-      <div className="relative z-10 flex-1 p-8 text-white font-sans overflow-y-auto" data-testid="execution-content">
+      <div className="relative z-10 flex-1 p-4 sm:p-8 text-white font-sans overflow-y-auto" data-testid="execution-content">
         <div className="w-full space-y-8 pb-12">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900  border border-slate-700 p-6 rounded-[2rem] shadow-sm" data-testid="execution-header">
             <div className="flex-1">
@@ -84,19 +83,19 @@ export default async function ExecutionMenuPage({ searchParams }: { searchParams
             </div>
           </header>
 
-          <section className="bg-slate-900  border border-slate-700 p-8 rounded-[2rem] shadow-sm relative overflow-hidden min-h-[400px]" data-testid="execution-main-section">
+          <section className="bg-slate-900 border border-slate-700 p-4 sm:p-8 rounded-[2rem] shadow-sm relative overflow-hidden min-h-[400px]" data-testid="execution-main-section">
              
              
              <div className="relative z-10">
                {resolvedParams.session ? (
                  <div className="space-y-8" data-testid="execution-session-view">
-                   <div className="flex justify-between items-center">
+                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                      <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
                        <span className="w-2 h-6 bg-amber-500 rounded-full inline-block shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span>
                        Session Summary
                      </h2>
                      {currentSession && (
-                       <div className="flex items-center gap-2">
+                       <div className="flex flex-wrap items-center gap-2">
                          <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
                            Start: {new Date(currentSession.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                          </span>
@@ -110,18 +109,18 @@ export default async function ExecutionMenuPage({ searchParams }: { searchParams
                          </span>
                        </div>
                      )}
-                     <div className="flex items-center gap-3" data-testid="execution-session-actions">
+                     <div className="flex flex-wrap items-center gap-3" data-testid="execution-session-actions">
                        <DeleteSessionButton session={currentSession} />
                        <CloneSessionButton sessionId={currentSession.id} />
                        <EditSessionButton session={currentSession} />
-                       <CompleteSessionButton 
-                         sessionId={resolvedParams.session} 
-                         initialStatus={currentSession?.status || 'On Progress'} 
-                         isReady={isReady} 
+                       <CompleteSessionButton
+                         sessionId={resolvedParams.session}
+                         initialStatus={currentSession?.status || 'On Progress'}
+                         incompleteModuleCount={incompleteModuleCount}
                        />
                      </div>
                    </div>
-                   <SummaryCards summary={data?.summary || {}} />
+                   <SummaryCards summary={data?.summary || {}} modules={sessionModules} />
                    
                    <h2 className="text-2xl font-bold mt-12 mb-6 flex items-center gap-3 text-white">
                      <span className="w-2 h-6 bg-rose-500 rounded-full inline-block shadow-[0_0_10px_rgba(244,63,94,0.6)]"></span>

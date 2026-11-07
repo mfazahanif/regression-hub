@@ -10,7 +10,7 @@ export function NewSessionButton() {
   useEffect(() => {
     try {
       const authData = JSON.parse(localStorage.getItem('auth') || '{}');
-      setCanCreate(!!authData.user && authData.user.role !== 'QA Member');
+      setCanCreate(!!authData.user);
     } catch {}
   }, []);
 

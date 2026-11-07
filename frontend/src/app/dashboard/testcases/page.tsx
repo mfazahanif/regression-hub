@@ -18,7 +18,6 @@ export default function TestcasesPage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="testcases-header-title">Testcase Repository</h1>
-                  <p className="text-indigo-200 font-medium text-sm mt-0.5">Manage and maintain your test scenarios</p>
                 </div>
               </div>
             </div>

@@ -20,7 +20,6 @@ export default function ImportExportPage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="import-export-header-title">Import / Export TC</h1>
-                  <p className="text-indigo-200 font-medium text-sm mt-0.5">Manajemen data testcase secara massal menggunakan file Excel</p>
                 </div>
               </div>
             </div>

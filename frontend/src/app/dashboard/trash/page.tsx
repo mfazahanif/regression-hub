@@ -23,9 +23,6 @@ export default function TrashPage() {
                   <h1 className="text-3xl font-black tracking-tight text-white" data-testid="trash-header-title">
                     Trash
                   </h1>
-                  <p className="text-white/60 mt-1 font-medium text-sm">
-                    Manage and restore soft-deleted items.
-                  </p>
                 </div>
               </div>
             </div>

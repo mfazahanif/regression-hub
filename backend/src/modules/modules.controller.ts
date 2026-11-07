@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, ForbiddenException, Put, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Put, Query } from '@nestjs/common';
 import { ModulesService } from './modules.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
@@ -8,8 +8,7 @@ export class ModulesController {
   constructor(private readonly modulesService: ModulesService) {}
 
   @Post()
-  async create(@Request() req: any, @Body() createModuleDto: any) {
-    if (req.user.roleName === 'QA Member') throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can create modules');
+  async create(@Body() createModuleDto: any) {
     return { data: await this.modulesService.create(createModuleDto) };
   }
 
@@ -32,14 +31,12 @@ export class ModulesController {
   }
 
   @Put(':id')
-  async update(@Request() req: any, @Param('id') id: string, @Body() updateModuleDto: any) {
-    if (req.user.roleName === 'QA Member') throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can update modules');
+  async update(@Param('id') id: string, @Body() updateModuleDto: any) {
     return { data: await this.modulesService.update(id, updateModuleDto) };
   }
 
   @Delete(':id')
-  async remove(@Request() req: any, @Param('id') id: string) {
-    if (req.user.roleName === 'QA Member') throw new ForbiddenException('Only Super Admin, Tech Lead, or BA can delete modules');
+  async remove(@Param('id') id: string) {
     return { data: await this.modulesService.remove(id) };
   }
 }
