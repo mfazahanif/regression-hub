@@ -77,14 +77,12 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
   const activeSessions = allSessions.filter((s: any) => s.isOpen);
 
   const selectedSessionId = resolvedParams.session;
-  const isSingleSessionMode = !!selectedSessionId || activeSessions.length === 1;
-  const targetSessionId = selectedSessionId || (activeSessions.length === 1 ? activeSessions[0].id : undefined);
+  const isSingleSessionMode = !!selectedSessionId;
+  const targetSessionId = selectedSessionId;
 
-  // If we are showing a specific session (selected or only 1 active)
   const data = await fetchGlobalAnalytics(targetSessionId);
   const sessionModules = targetSessionId ? await fetchSessionModules(targetSessionId) : [];
 
-  // If we are showing multiple active sessions, we need analytics for each to draw their charts
   let activeSessionsWithAnalytics: any[] = [];
   if (!isSingleSessionMode) {
     activeSessionsWithAnalytics = await Promise.all(
@@ -104,16 +102,16 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
       <Sidebar />
 
       <AnalyticsViewProvider>
-      <div className="relative z-10 flex-1 p-8 text-white font-sans overflow-y-auto" data-testid="dashboard-content">
-        <div className="w-full space-y-8 pb-12">
-          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900  border border-slate-700 p-6 rounded-[2rem] shadow-sm" data-testid="dashboard-header">
+      <div className="relative z-10 flex-1 p-5 sm:p-7 xl:p-10 text-white font-sans overflow-y-auto" data-testid="dashboard-content">
+        <div className="w-full space-y-9 pb-12">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5" data-testid="dashboard-header">
             <div className="flex-1">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-sm ">
+                <div className="w-11 h-11 bg-indigo-600 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-md" data-testid="dashboard-header-title">Dashboard</h1>
+                  <h1 className="text-3xl font-black tracking-tight text-white" data-testid="dashboard-header-title">Dashboard</h1>
                 </div>
               </div>
             </div>
@@ -121,28 +119,34 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
           </header>
 
           
-          <div className="flex justify-between items-center mb-1 pr-2 mt-4" data-testid="dashboard-overview-bar">
-            <h2 className="text-xl font-bold text-white tracking-tight" data-testid="dashboard-overview-title">Overview</h2>
-            <SessionSelector currentSession={resolvedParams.session} />
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-5 border-b border-slate-700/70 pb-5" data-testid="dashboard-overview-bar">
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight" data-testid="dashboard-overview-title">Overview</h2>
+              <p className="mt-1 text-sm text-slate-600">Current test runs and team progress.</p>
+            </div>
+            <div className="w-full sm:w-auto">
+              <p className="mb-1.5 text-xs font-semibold text-slate-600">Session filter</p>
+              <SessionSelector currentSession={resolvedParams.session} />
+            </div>
           </div>
 
           <AnalyticsViewToggle />
 
           {!isSingleSessionMode ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" data-testid="active-sessions-grid">
+            <div className={`grid grid-cols-1 gap-6 xl:gap-7 ${activeSessionsWithAnalytics.length === 1 ? 'max-w-3xl' : 'md:grid-cols-2 xl:grid-cols-3'}`} data-testid="active-sessions-grid">
               {activeSessionsWithAnalytics.map(session => (
-                <section key={session.id} id={`session-card-${session.id}`} data-testid={`session-overview-card-${session.id}`} className="bg-slate-900  border border-slate-700 p-8 rounded-[2rem] shadow-sm relative overflow-hidden flex flex-col items-center">
+                <section key={session.id} id={`session-card-${session.id}`} data-testid={`session-overview-card-${session.id}`} className="bg-slate-900 border border-slate-700 p-6 sm:p-7 rounded-2xl relative overflow-hidden flex flex-col items-center">
                   
                   
-                  <div className="w-full flex justify-between items-start mb-6 relative z-10">
-                    <div className="container">
-                      <h2 className="text-xl font-bold text-white mb-2 truncate text-nowrap" data-testid={`session-overview-name-${session.id}`}>{session.name}</h2>
+                  <div className="w-full flex justify-between items-start mb-5 relative z-10">
+                    <div className="min-w-0 w-full">
+                      <h2 className="text-xl font-bold text-white mb-3 truncate" data-testid={`session-overview-name-${session.id}`}>{session.name}</h2>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                           {session.status}
                         </span>
                         <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-slate-900 text-white/70 border border-slate-800">
-                          {new Date(session.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {session.endDate ? new Date(session.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Ongoing'}
+                          {new Date(session.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {session.endDate || session.closedAt ? new Date(session.endDate || session.closedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Ongoing'}
                         </span>
                         {session.status !== 'Finished' && session.status !== 'Done' && session.endDate && (
                           (() => {
@@ -153,7 +157,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
                     </div>
                   </div>
 
-                  <div className="w-full relative z-10 mb-6">
+                  <div className="w-full relative z-10 mb-5">
                     <ExecutionChart summary={session.analytics.summary} modules={session.modules} />
                   </div>
 
@@ -161,7 +165,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
                     id={`execute-session-link-${session.id}`}
                     data-testid={`execute-session-link-${session.id}`}
                     href={`/dashboard/execution?session=${session.id}`}
-                    className="relative z-10 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-center shadow-sm hover:  flex justify-center items-center gap-2"
+                    className="relative z-10 min-h-11 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-lg text-center flex justify-center items-center gap-2 transition-colors"
                   >
                     Execute Session
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -188,7 +192,7 @@ export default async function GlobalDashboardPage({ searchParams }: { searchPara
                         {(() => {
                           const s = allSessions.find((s: any) => s.id === targetSessionId);
                           if (!s) return 'Timeline Unknown';
-                          return `${new Date(s.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${s.endDate ? new Date(s.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Ongoing'}`;
+                          return `${new Date(s.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${s.endDate || s.closedAt ? new Date(s.endDate || s.closedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Ongoing'}`;
                         })()}
                       </span>
                       {(() => {

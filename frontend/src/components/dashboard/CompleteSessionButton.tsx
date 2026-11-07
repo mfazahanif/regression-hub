@@ -52,10 +52,6 @@ export function CompleteSessionButton({ sessionId, initialStatus, incompleteModu
   if (initialStatus === 'Finished') {
     return (
       <div className="flex items-center gap-3">
-        <div data-testid="session-finished-indicator" className="bg-emerald-500/10 text-emerald-400 px-4 h-10 rounded-xl text-sm font-bold border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          Session Finished
-        </div>
         <button 
           id="reopen-session-btn"
           data-testid="reopen-session-btn"

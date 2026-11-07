@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { useRouter } from 'next/navigation';
 import { ViewMode, ViewToggle } from './ViewToggle';
+import { authenticatedFetch } from '@/lib/authenticatedFetch';
 
 export function TaskManagement() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -31,11 +32,9 @@ export function TaskManagement() {
           return;
         }
         
-        const { access_token } = JSON.parse(authStr);
-        const res = await fetch(`${baseUrl}/sessions/my-tasks`, {
-          headers: { 'Authorization': `Bearer ${access_token}` },
+        const res = await authenticatedFetch(`${baseUrl}/sessions/my-tasks`, {
           cache: 'no-store'
-        });
+        }, baseUrl);
         
         if (res.ok) {
           const data = await res.json();

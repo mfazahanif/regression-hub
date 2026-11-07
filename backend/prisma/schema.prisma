@@ -155,6 +155,7 @@ model Session {
   status         String             @default("TO DO") // e.g. "TO DO", "On Progress", "Finished"
   startDate      DateTime           @default(now())
   endDate        DateTime?
+  closedAt       DateTime?
   sessionModules SessionModule[]
   executions     SessionExecution[]
   claimHistories ClaimHistory[]

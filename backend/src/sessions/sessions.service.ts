@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateSessionDto } from './sessions.dto.js';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class SessionsService {
+  private readonly logger = new Logger(SessionsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async deleteSession(id: string) {
@@ -14,6 +17,7 @@ export class SessionsService {
   }
 
   async createSession(dto: CreateSessionDto) {
+    const sessionStatus = this.getInitialSessionStatus(dto.startDate);
     const defaultStatus = await this.prisma.status.findFirst({
       where: { name: 'TO DO' }
     });
@@ -28,16 +32,32 @@ export class SessionsService {
       throw new NotFoundException('Default execution status not found in database');
     }
 
+    try {
+      return await this.createSessionTransaction(dto, initialStatusId, false, sessionStatus);
+    } catch (error) {
+      if (!this.isMissingClosedAtColumn(error)) throw error;
+      this.logger.warn('Creating a session without the pending sessions.closedAt column. Apply pending Prisma migrations.');
+      return this.createSessionTransaction(dto, initialStatusId, true, sessionStatus);
+    }
+  }
+
+  private createSessionTransaction(dto: CreateSessionDto, initialStatusId: number, legacySchema: boolean, sessionStatus: string) {
     return this.prisma.$transaction(async (tx: any) => {
-      const session = await tx.session.create({
-        data: {
-          name: dto.name,
-          environmentId: Number(dto.environmentId),
-          status: 'TO DO',
-          ...(dto.startDate && { startDate: new Date(dto.startDate) }),
-          ...(dto.endDate && { endDate: new Date(dto.endDate) }),
-        }
-      });
+      const session = legacySchema
+        ? (await tx.$queryRaw`
+            INSERT INTO "sessions" ("id", "name", "environmentId", "status", "startDate", "endDate", "createdAt", "updatedAt")
+            VALUES (${randomUUID()}, ${dto.name}, ${Number(dto.environmentId)}, ${sessionStatus}, ${dto.startDate ? new Date(dto.startDate) : new Date()}, ${dto.endDate ? new Date(dto.endDate) : null}, NOW(), NOW())
+            RETURNING *
+          `)[0]
+        : await tx.session.create({
+            data: {
+              name: dto.name,
+              environmentId: Number(dto.environmentId),
+              status: sessionStatus,
+              ...(dto.startDate && { startDate: new Date(dto.startDate) }),
+              ...(dto.endDate && { endDate: new Date(dto.endDate) }),
+            }
+          });
 
       if (dto.moduleIds && dto.moduleIds.length > 0) {
         const sessionModules = dto.moduleIds.map(moduleId => ({
@@ -73,8 +93,32 @@ export class SessionsService {
         }
       }
 
-      return session;
+      return { ...session, closedAt: session.closedAt ?? null };
     });
+  }
+
+  private isMissingClosedAtColumn(error: unknown) {
+    const prismaError = error as { code?: string; meta?: { column?: string }; message?: string };
+    return prismaError.code === 'P2022'
+      && (prismaError.meta?.column?.includes('closedAt') || prismaError.message?.includes('closedAt'));
+  }
+
+  private getInitialSessionStatus(startDate?: string) {
+    const start = startDate ? new Date(startDate) : new Date();
+    if (Number.isNaN(start.getTime())) throw new BadRequestException('Tanggal mulai sesi tidak valid');
+
+    const appDate = (date: Date) => {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(date);
+      const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+      return `${values.year}-${values.month}-${values.day}`;
+    };
+
+    return appDate(start) <= appDate(new Date()) ? 'On Progress' : 'TO DO';
   }
 
   
@@ -232,16 +276,50 @@ export class SessionsService {
   }
 
   async getSessions() {
-    const sessions = await this.prisma.session.findMany({
-      where: { isDeleted: false },
-      include: {
-        environment: true,
-        _count: {
-          select: { sessionModules: true, executions: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const where = { isDeleted: false };
+    const orderBy = { createdAt: 'desc' as const };
+    let sessions: any[];
+
+    try {
+      sessions = await this.prisma.session.findMany({
+        where,
+        include: {
+          environment: true,
+          _count: {
+            select: { sessionModules: true, executions: true }
+          }
+        },
+        orderBy
+      });
+    } catch (error) {
+      const prismaError = error as { code?: string; meta?: { column?: string }; message?: string };
+      const missingClosedAt = prismaError.code === 'P2022'
+        && (prismaError.meta?.column?.includes('closedAt') || prismaError.message?.includes('closedAt'));
+
+      if (!missingClosedAt) throw error;
+
+      this.logger.warn('Database is missing sessions.closedAt; apply pending Prisma migrations to restore closure timestamps.');
+      const legacySessions = await this.prisma.session.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          environmentId: true,
+          isOpen: true,
+          status: true,
+          startDate: true,
+          endDate: true,
+          createdAt: true,
+          updatedAt: true,
+          isDeleted: true,
+          deletedAt: true,
+          environment: true,
+          _count: { select: { sessionModules: true, executions: true } }
+        },
+        orderBy
+      });
+      sessions = legacySessions.map(session => ({ ...session, closedAt: null }));
+    }
 
     const statusWeight: Record<string, number> = {
       'ON PROGRESS': 1,
@@ -310,7 +388,7 @@ export class SessionsService {
         data: { 
           status: 'Finished', 
           isOpen: false,
-          endDate: new Date()
+          closedAt: new Date()
         }
       });
     }
@@ -321,7 +399,7 @@ export class SessionsService {
         data: { 
           status: 'On Progress',
           isOpen: true,
-          endDate: null
+          closedAt: null
         }
       });
     }

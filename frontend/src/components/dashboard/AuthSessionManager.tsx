@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { refreshCurrentSession } from '@/lib/authenticatedFetch';
 
 const ACTIVITY_KEY = 'coreqa_last_activity';
 
@@ -15,14 +16,18 @@ export default function AuthSessionManager() {
     const idleMs = (configuredIdleMinutes > 0 ? configuredIdleMinutes : 30) * 60 * 1000;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     let refreshing = false;
+    let loggingOut = false;
 
-    const logout = () => {
+    const logout = async () => {
+      if (loggingOut) return;
+      loggingOut = true;
       const auth = getAuth();
-      if (auth.refresh_token) {
-        void fetch(`${apiUrl}/auth/refresh`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: auth.refresh_token }),
-        }).catch(() => undefined);
+      if (auth.access_token) {
+        try {
+          await fetch(`${apiUrl}/auth/signout`, {
+            method: 'POST', headers: { Authorization: `Bearer ${auth.access_token}` },
+          });
+        } catch {}
       }
       localStorage.removeItem('auth');
       localStorage.removeItem(ACTIVITY_KEY);
@@ -38,19 +43,10 @@ export default function AuthSessionManager() {
     }
     const refresh = async () => {
       if (refreshing) return;
-      const auth = getAuth();
-      if (!auth.refresh_token) return logout();
       refreshing = true;
       try {
-        const response = await fetch(`${apiUrl}/auth/refresh`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: auth.refresh_token }),
-        });
-        if (!response.ok) return logout();
-        const result = await response.json();
-        const updatedAuth = { ...auth, ...result.data };
-        localStorage.setItem('auth', JSON.stringify(updatedAuth));
-        document.cookie = `coreqa_token=${updatedAuth.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=strict`;
+        const updatedAuth = await refreshCurrentSession(apiUrl);
+        if (!updatedAuth) await logout();
       } catch { /* A transient network failure is retried on the next activity tick. */ }
       finally { refreshing = false; }
     };

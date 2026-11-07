@@ -87,7 +87,7 @@ export class AnalyticsService {
   async getSessionAnalytics(sessionId: string) {
     const session = await this.prisma.session.findUnique({
       where: { id: sessionId },
-      select: { id: true, name: true, status: true, isOpen: true }
+      select: { id: true, name: true, status: true, isOpen: true, startDate: true }
     });
 
     const statusCounts = await this.prisma.sessionExecution.groupBy({

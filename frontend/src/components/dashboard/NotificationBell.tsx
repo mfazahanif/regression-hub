@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { authenticatedFetch } from '@/lib/authenticatedFetch';
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -12,12 +13,8 @@ export function NotificationBell() {
     try {
       const authData = localStorage.getItem('auth');
       if (!authData) return;
-      const { access_token } = JSON.parse(authData);
-      
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${baseUrl}/testcases/notifications`, {
-        headers: { 'Authorization': `Bearer ${access_token}` }
-      });
+      const res = await authenticatedFetch(`${baseUrl}/testcases/notifications`, {}, baseUrl);
       if (res.ok) {
         const json = await res.json();
         setNotifications(json.data || []);
@@ -36,13 +33,10 @@ export function NotificationBell() {
   const handleNotificationClick = async (notif: any) => {
     if (!notif.isRead) {
       try {
-        const authData = localStorage.getItem('auth');
-        const { access_token } = JSON.parse(authData || '{}');
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        await fetch(`${baseUrl}/testcases/notifications/${notif.id}/read`, {
+        await authenticatedFetch(`${baseUrl}/testcases/notifications/${notif.id}/read`, {
           method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${access_token}` }
-        });
+        }, baseUrl);
         fetchNotifications();
       } catch(err) {}
     }

@@ -1,11 +1,16 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { SessionsService } from './sessions.service.js';
+import { SessionReportService } from './session-report.service.js';
 import { CreateSessionDto } from './sessions.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
 @Controller('sessions')
 export class SessionsController {
-  constructor(private readonly sessionsService: SessionsService) {}
+  constructor(
+    private readonly sessionsService: SessionsService,
+    private readonly sessionReportService: SessionReportService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -28,6 +33,24 @@ export class SessionsController {
   async getSessions() {
     const data = await this.sessionsService.getSessions();
     return { data };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':sessionId/report')
+  async downloadReport(
+    @Param('sessionId') sessionId: string,
+    @Query('format') format: string,
+    @Res() response: Response,
+  ) {
+    if (format !== 'pdf' && format !== 'xlsx') {
+      throw new BadRequestException('Format report harus pdf atau xlsx.');
+    }
+
+    const report = await this.sessionReportService.createReport(sessionId, format);
+    response.setHeader('Content-Type', report.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${report.filename}"`);
+    response.setHeader('Content-Length', report.buffer.length);
+    response.send(report.buffer);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { DashboardHeaderActions } from './DashboardHeaderActions';
+import { authenticatedFetch } from '@/lib/authenticatedFetch';
 
 export function Sidebar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -19,10 +20,9 @@ export function Sidebar() {
 
         // Fetch My Tasks summary for badge
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        fetch(`${baseUrl}/sessions/my-tasks`, {
-          headers: { 'Authorization': `Bearer ${parsed.access_token}` }
-        })
-        .then(res => res.json())
+        authenticatedFetch(`${baseUrl}/sessions/my-tasks`, {}, baseUrl)
+        .then(res => res.ok ? res : null)
+        .then(res => res?.json())
         .then(data => {
           if (data.data?.summary?.statusBreakdown) {
             const breakdown = data.data.summary.statusBreakdown;

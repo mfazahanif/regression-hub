@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { DownloadReportButton } from './DownloadReportButton';
 
 type SortConfig = {
   key: string;
@@ -193,6 +194,7 @@ export function SessionsTable({ initialSessions }: { initialSessions: any[] }) {
               <SortHeader label="Status" sortKey="status" />
               <SortHeader label="Executed" sortKey="executed" />
               <SortHeader label="Passed" sortKey="passed" />
+              <th className="py-4 px-4 text-indigo-200 font-semibold text-center">Report</th>
             </tr>
           </thead>
           <tbody>
@@ -215,7 +217,11 @@ export function SessionsTable({ initialSessions }: { initialSessions: any[] }) {
                   <td data-testid={`session-timeline-${session.id}`} className="py-4 px-6">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-white/80">{new Date(session.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      <span className="text-xs text-white/50">to {session.endDate ? new Date(session.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Ongoing'}</span>
+                      <span className="text-xs text-white/50">to {session.endDate
+                        ? new Date(session.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : session.closedAt
+                          ? new Date(session.closedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                          : 'Ongoing'}</span>
                     </div>
                   </td>
                   <td data-testid={`session-status-${session.id}`} className="py-4 px-6">
@@ -237,12 +243,17 @@ export function SessionsTable({ initialSessions }: { initialSessions: any[] }) {
                       {session.passRate}%
                     </span>
                   </td>
+                  <td className="py-3 px-4 text-center" onClick={event => event.stopPropagation()}>
+                    {session.status === 'Finished' && (
+                      <DownloadReportButton sessionId={session.id} sessionName={session.name} compact />
+                    )}
+                  </td>
                 </tr>
               )
             })}
             {paginated.length === 0 && (
               <tr>
-                <td data-testid="sessions-empty-state" colSpan={7} className="py-12 text-center text-white/50">
+                <td data-testid="sessions-empty-state" colSpan={8} className="py-12 text-center text-white/50">
                   {search ? 'No sessions match your search.' : 'No sessions found. Create one from the sidebar.'}
                 </td>
               </tr>

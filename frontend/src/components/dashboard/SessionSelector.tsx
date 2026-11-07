@@ -3,22 +3,28 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
+type SessionOption = { id: string; name: string };
+
 export function SessionSelector({ currentSession }: { currentSession?: string }) {
-  const [sessions, setSessions] = useState<{id: string, name: string}[]>([]);
+  const [sessions, setSessions] = useState<SessionOption[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-    fetch(`${apiUrl}/sessions`)
-      .then(res => res.json())
+    fetch(`${apiUrl}/sessions`, { cache: 'no-store' })
+      .then(res => {
+        if (!res.ok) throw new Error('Unable to load sessions');
+        return res.json();
+      })
       .then(json => setSessions(json.data || []))
-      .catch(err => console.error(err));
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -34,91 +40,107 @@ export function SessionSelector({ currentSession }: { currentSession?: string })
   const handleSelect = (val: string) => {
     setIsOpen(false);
     setSearchQuery('');
-    if (val) {
-      router.push(`${pathname}?session=${val}`);
-    } else {
-      router.push(`${pathname}`);
-    }
+    router.push(val ? `${pathname}?session=${val}` : pathname);
   };
 
-  const filteredSessions = sessions.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const currentSessionName = currentSession ? sessions.find(s => s.id === currentSession)?.name || 'Unknown Session' : 'Active Sessions';
+  const filteredSessions = sessions.filter(session => session.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const currentSessionName = currentSession
+    ? sessions.find(session => session.id === currentSession)?.name || (loading ? 'Loading sessions' : 'Unknown session')
+    : 'Active sessions';
 
   return (
-    <div className="relative group inline-block z-50" ref={dropdownRef} data-testid="session-selector">
-      <div 
+    <div
+      className="relative z-50 w-full sm:w-[260px]"
+      ref={dropdownRef}
+      data-testid="session-selector"
+      onKeyDown={event => {
+        if (event.key === 'Escape') setIsOpen(false);
+      }}
+    >
+      <button
+        type="button"
         id="session-selector-btn"
         data-testid="session-selector-btn"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative flex items-center bg-[#0f1117] border border-indigo-500/30 hover:border-indigo-400/80 rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] w-[300px]"
+        aria-label={`Session filter: ${currentSessionName}`}
+        aria-expanded={isOpen}
+        aria-controls="session-selector-menu"
+        onClick={() => setIsOpen(value => !value)}
+        className="flex min-h-10 w-full items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 text-left text-sm text-slate-300 transition-colors hover:border-indigo-400 active:bg-slate-800"
       >
-        {/* Context Icon */}
-        <div className="pl-4 pr-3 py-3 flex items-center justify-center text-indigo-400 bg-indigo-500/10 border-r border-indigo-500/20 shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-        </div>
-        
-        {/* Selected Value */}
-        <div className="flex-1 pl-4 pr-2 py-3 text-white font-bold text-sm tracking-wide truncate" data-testid="session-selector-name">
-          {currentSessionName}
-        </div>
-        
-        {/* Custom Chevron */}
-        <div className={`pr-4 pl-1 shrink-0 transition-transform ${isOpen ? 'text-white rotate-180' : 'text-indigo-400 group-hover:text-white'}`}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-        </div>
-      </div>
+        <svg className="h-4 w-4 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5h16M7 12h10m-7 7h4" />
+        </svg>
+        <span className="min-w-0 flex-1 truncate font-medium" data-testid="session-selector-name">{currentSessionName}</span>
+        <svg className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full mt-2 w-full bg-slate-900 border border-indigo-500/30 rounded-xl shadow-sm overflow-hidden" data-testid="session-selector-menu">
-          <div className="p-2 border-b border-slate-800 bg-slate-800">
+        <div
+          id="session-selector-menu"
+          className="absolute right-0 top-full mt-2 w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-lg"
+          data-testid="session-selector-menu"
+        >
+          <div className="border-b border-slate-700 p-2">
+            <label className="sr-only" htmlFor="session-selector-search-input">Search sessions</label>
             <div className="relative">
-              <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              <input 
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m21 21-4.3-4.3m1.3-5.2a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" />
+              </svg>
+              <input
                 id="session-selector-search-input"
                 data-testid="session-selector-search-input"
-                type="text"
+                type="search"
                 autoFocus
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search sessions..."
-                className="w-full bg-black/30 border border-slate-800 rounded-lg py-2 pl-9 pr-4 text-white text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onChange={event => setSearchQuery(event.target.value)}
+                placeholder="Search sessions"
+                className="min-h-10 w-full rounded-md border border-slate-700 bg-slate-950 pl-9 pr-3 text-sm text-slate-300 placeholder:text-slate-500 focus-visible:outline-indigo-400"
               />
             </div>
           </div>
-          
-          <div className="max-h-60 overflow-y-auto custom-scrollbar">
-            <div 
+
+          <div className="max-h-60 overflow-y-auto p-1.5" data-testid="session-selector-options">
+            <button
+              type="button"
               id="session-selector-option-active"
               data-testid="session-selector-option-active"
+              aria-pressed={!currentSession}
               onClick={() => handleSelect('')}
-              className={`px-4 py-3 text-sm cursor-pointer transition-colors ${!currentSession ? 'bg-indigo-500/20 text-indigo-300 font-bold border-l-2 border-indigo-500' : 'text-white hover:bg-white/5 font-medium'}`}
+              className={`min-h-10 w-full rounded-md px-3 text-left text-sm transition-colors hover:bg-slate-800 active:bg-slate-700 ${!currentSession ? 'bg-indigo-950 font-semibold text-indigo-100' : 'text-slate-300'}`}
             >
-              Active Sessions
-            </div>
-            
-            {filteredSessions.length > 0 ? (
+              Active sessions
+            </button>
+
+            {loading ? (
+              <p className="px-3 py-4 text-sm text-slate-600" role="status" data-testid="session-selector-loading">Loading sessions…</p>
+            ) : loadError ? (
+              <p className="px-3 py-4 text-sm text-rose-300" role="alert" data-testid="session-selector-error">Sessions could not be loaded. Refresh the page to try again.</p>
+            ) : sessions.length === 0 ? (
+              <p className="px-3 py-4 text-sm text-slate-600" data-testid="session-selector-empty">No sessions are available.</p>
+            ) : filteredSessions.length > 0 ? (
               <>
-                {filteredSessions.slice(0, 10).map(s => (
-                  <div 
-                    key={s.id}
-                    data-testid={`session-selector-option-${s.id}`}
-                    onClick={() => handleSelect(s.id)}
-                    className={`px-4 py-3 text-sm cursor-pointer transition-colors ${s.id === currentSession ? 'bg-indigo-500/20 text-indigo-300 font-bold border-l-2 border-indigo-500' : 'text-white hover:bg-white/5 font-medium'}`}
+                {filteredSessions.slice(0, 10).map(session => (
+                  <button
+                    key={session.id}
+                    type="button"
+                    data-testid={`session-selector-option-${session.id}`}
+                    aria-pressed={session.id === currentSession}
+                    onClick={() => handleSelect(session.id)}
+                    className={`min-h-10 w-full rounded-md px-3 text-left text-sm transition-colors hover:bg-slate-800 active:bg-slate-700 ${session.id === currentSession ? 'bg-indigo-950 font-semibold text-indigo-100' : 'text-slate-300'}`}
                   >
-                    {s.name}
-                  </div>
+                    <span className="block truncate">{session.name}</span>
+                  </button>
                 ))}
                 {filteredSessions.length > 10 && (
-                  <div className="px-4 py-3 text-xs text-center text-white/40 italic bg-slate-800" data-testid="session-selector-more-hint">
-                    + {filteredSessions.length - 10} more sessions. Type to refine.
-                  </div>
+                  <p className="px-3 py-3 text-xs text-slate-600" data-testid="session-selector-more-hint">
+                    {filteredSessions.length - 10} more sessions. Refine your search.
+                  </p>
                 )}
               </>
             ) : (
-              <div className="px-4 py-8 text-center text-sm text-white/40" data-testid="session-selector-empty">
-                No sessions found
-              </div>
+              <p className="px-3 py-4 text-sm text-slate-600" data-testid="session-selector-no-match">No sessions match your search.</p>
             )}
           </div>
         </div>

@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { ExecutionService } from './execution.service.js';
 import { GetTestcasesQueryDto, UpdateExecutionStatusDto } from './execution.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -16,13 +17,14 @@ export class ExecutionController {
   }
 
   @Post('modules/:moduleId/claim')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async claimModule(
     @Param('sessionId') sessionId: string,
     @Param('moduleId') moduleId: string,
-    @Body('userId') userId: string 
+    @Req() request: Request & { user: { id: string } },
   ) {
-    const claim = await this.executionService.claimModule(sessionId, moduleId, userId);
+    const claim = await this.executionService.claimModule(sessionId, moduleId, request.user.id);
     return { message: 'Module berhasil diklaim', data: claim };
   }
 

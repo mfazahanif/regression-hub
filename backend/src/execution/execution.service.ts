@@ -6,6 +6,13 @@ import { GetTestcasesQueryDto, UpdateExecutionStatusDto } from './execution.dto.
 export class ExecutionService {
   constructor(private prisma: PrismaService) {}
 
+  private async markSessionInProgress(db: any, sessionId: string) {
+    await db.session.updateMany({
+      where: { id: sessionId, isOpen: true, status: 'TO DO' },
+      data: { status: 'On Progress' },
+    });
+  }
+
   private async checkAndFinishSession(sessionId: string) {
     const executions = await this.prisma.sessionExecution.findMany({
       where: { sessionId },
@@ -20,7 +27,7 @@ export class ExecutionService {
     if (unpassed.length === 0 && executions.length > 0) {
       await this.prisma.session.update({
         where: { id: sessionId },
-        data: { status: 'Finished', isOpen: false, endDate: new Date() }
+        data: { status: 'Finished', isOpen: false, closedAt: new Date() }
       });
     }
   }
@@ -95,10 +102,15 @@ export class ExecutionService {
 
   async claimModule(sessionId: string, moduleId: string, userId: string) {
     return await this.prisma.$transaction(async (tx: any) => {
-      const session = await tx.session.findUnique({ where: { id: sessionId } });
+      const session = await tx.session.findUnique({
+        where: { id: sessionId },
+        select: { id: true, isOpen: true },
+      });
       if (!session || !session.isOpen) {
         throw new BadRequestException('Session tidak valid atau sudah ditutup.');
       }
+
+      await this.markSessionInProgress(tx, sessionId);
 
       // Allow takeover: invalidate any existing active claim
       await tx.claimHistory.updateMany({
@@ -158,6 +170,8 @@ export class ExecutionService {
       },
       include: { status: true }
     });
+
+    await this.markSessionInProgress(this.prisma, sessionId);
 
     if (targetStatus.name.toUpperCase() === 'PASSED') {
       const testcase = await this.prisma.masterTestcase.findUnique({
@@ -246,6 +260,8 @@ export class ExecutionService {
       },
       include: { status: true }
     });
+
+    await this.markSessionInProgress(this.prisma, sessionId);
 
     if (['FAILED', 'BLOCKED', 'PASSED WITH NOTES'].includes(targetStatus.name.toUpperCase())) {
       await this.prisma.sessionExecution.update({

@@ -10,6 +10,7 @@ import { DeleteSessionButton } from '@/components/dashboard/DeleteSessionButton'
 import Link from 'next/link';
 import { BackButton } from '@/components/dashboard/BackButton';
 import { getModuleExecutionStatus } from '@/utils/module-summary';
+import { DownloadReportButton } from '@/components/dashboard/DownloadReportButton';
 
 async function fetchGlobalAnalytics(sessionId?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -104,6 +105,11 @@ export default async function ExecutionMenuPage({ searchParams }: { searchParams
                              End: {new Date(currentSession.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                            </span>
                          )}
+                         {currentSession.closedAt && (
+                           <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                             Closed: {new Date(currentSession.closedAt).toLocaleString('en-US', { timeZone: 'Asia/Jakarta', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB
+                           </span>
+                         )}
                          <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                            {currentSession.status}
                          </span>
@@ -112,6 +118,9 @@ export default async function ExecutionMenuPage({ searchParams }: { searchParams
                      <div className="flex flex-wrap items-center gap-3" data-testid="execution-session-actions">
                        <DeleteSessionButton session={currentSession} />
                        <CloneSessionButton sessionId={currentSession.id} />
+                       {currentSession?.status === 'Finished' && (
+                         <DownloadReportButton sessionId={currentSession.id} sessionName={currentSession.name} />
+                       )}
                        <EditSessionButton session={currentSession} />
                        <CompleteSessionButton
                          sessionId={resolvedParams.session}

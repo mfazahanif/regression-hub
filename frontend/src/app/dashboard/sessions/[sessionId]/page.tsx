@@ -46,7 +46,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ sess
                    <h2 className="text-xl font-bold text-white">{data.session.name}</h2>
                    <div className="flex items-center gap-2 mt-2">
                      <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                       Start: {new Date(data.session.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                       Start: {new Date(data.session.startDate).toLocaleDateString('en-US', { timeZone: 'Asia/Jakarta', year: 'numeric', month: 'short', day: 'numeric' })}
                      </span>
                      {data.session.endDate && (
                        <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
