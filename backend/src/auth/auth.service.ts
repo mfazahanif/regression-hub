@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LoginDto } from './auth.dto.js';
@@ -23,7 +23,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Kredensial tidak valid');
+      throw new NotFoundException('Pengguna tidak ditemukan');
     }
 
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
