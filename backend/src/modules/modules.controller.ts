@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Put, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, Query } from '@nestjs/common';
 import { ModulesService } from './modules.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { CreateModuleDto } from './dto/create-module.dto.js';
+import { UpdateModuleDto } from './dto/update-module.dto.js';
 
 @Controller('modules')
 @UseGuards(JwtAuthGuard)
@@ -8,7 +10,7 @@ export class ModulesController {
   constructor(private readonly modulesService: ModulesService) {}
 
   @Post()
-  async create(@Body() createModuleDto: any) {
+  async create(@Body() createModuleDto: CreateModuleDto) {
     return { data: await this.modulesService.create(createModuleDto) };
   }
 
@@ -31,7 +33,7 @@ export class ModulesController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateModuleDto: any) {
+  async update(@Param('id') id: string, @Body() updateModuleDto: UpdateModuleDto) {
     return { data: await this.modulesService.update(id, updateModuleDto) };
   }
 

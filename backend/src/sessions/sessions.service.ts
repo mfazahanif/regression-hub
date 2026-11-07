@@ -10,10 +10,22 @@ export class SessionsService {
   constructor(private prisma: PrismaService) {}
 
   async deleteSession(id: string) {
-    return this.prisma.session.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date() },
-    });
+    try {
+      return await this.prisma.session.update({
+        where: { id },
+        data: { isDeleted: true, deletedAt: new Date() },
+      });
+    } catch (error) {
+      if (!this.isMissingClosedAtColumn(error)) throw error;
+      const rows = await this.prisma.$queryRaw<Record<string, unknown>[]>`
+        UPDATE "sessions"
+        SET "isDeleted" = true, "deletedAt" = NOW(), "updatedAt" = NOW()
+        WHERE "id" = ${id}
+        RETURNING *
+      `;
+      if (!rows[0]) throw new NotFoundException('Session not found');
+      return { ...rows[0], closedAt: null };
+    }
   }
 
   async createSession(dto: CreateSessionDto) {
@@ -126,8 +138,12 @@ export class SessionsService {
   async cloneSession(id: string) {
     const session = await this.prisma.session.findUnique({
       where: { id },
-      include: {
-        sessionModules: true,
+      select: {
+        id: true,
+        name: true,
+        environmentId: true,
+        endDate: true,
+        sessionModules: { select: { moduleId: true } },
         claimHistories: { where: { isActive: true } }
       }
     });
@@ -143,16 +159,42 @@ export class SessionsService {
       throw new NotFoundException('Default execution status not found in database');
     }
 
+    try {
+      return await this.cloneSessionTransaction(session, initialStatusId, false);
+    } catch (error) {
+      if (!this.isMissingClosedAtColumn(error)) throw error;
+      this.logger.warn('Cloning a session without the pending sessions.closedAt column. Apply pending Prisma migrations.');
+      return this.cloneSessionTransaction(session, initialStatusId, true);
+    }
+  }
+
+  private cloneSessionTransaction(
+    session: {
+      name: string;
+      environmentId: number;
+      endDate: Date | null;
+      sessionModules: { moduleId: string }[];
+      claimHistories: { moduleId: string; claimedById: string }[];
+    },
+    initialStatusId: number,
+    legacySchema: boolean,
+  ) {
     return this.prisma.$transaction(async (tx: any) => {
-      const clonedSession = await tx.session.create({
-        data: {
-          name: session.name + ' (Clone)',
-          environmentId: session.environmentId,
-          status: 'TO DO',
-          startDate: new Date(),
-          endDate: session.endDate,
-        }
-      });
+      const clonedSession = legacySchema
+        ? (await tx.$queryRaw`
+            INSERT INTO "sessions" ("id", "name", "environmentId", "status", "startDate", "endDate", "createdAt", "updatedAt")
+            VALUES (${randomUUID()}, ${session.name + ' (Clone)'}, ${session.environmentId}, 'TO DO', NOW(), ${session.endDate}, NOW(), NOW())
+            RETURNING *
+          `)[0]
+        : await tx.session.create({
+            data: {
+              name: session.name + ' (Clone)',
+              environmentId: session.environmentId,
+              status: 'TO DO',
+              startDate: new Date(),
+              endDate: session.endDate,
+            }
+          });
 
       if (session.sessionModules.length > 0) {
         const moduleIds = session.sessionModules.map(sm => sm.moduleId);
@@ -189,7 +231,7 @@ export class SessionsService {
         }
       }
 
-      return clonedSession;
+      return legacySchema ? { ...clonedSession, closedAt: null } : clonedSession;
     });
   }
 
@@ -202,17 +244,30 @@ export class SessionsService {
     });
     const initialStatusId = defaultStatus?.id || fallbackStatus?.id;
 
-    return this.prisma.$transaction(async (tx: any) => {
+    const updateSessionTransaction = (legacySchema: boolean) => this.prisma.$transaction(async (tx: any) => {
       const updateData: any = {};
       if (dto.name) updateData.name = dto.name;
       if (dto.environmentId) updateData.environmentId = Number(dto.environmentId);
       if (dto.startDate) updateData.startDate = new Date(dto.startDate);
       if (dto.endDate !== undefined) updateData.endDate = dto.endDate ? new Date(dto.endDate) : null;
 
-      const session = await tx.session.update({
-        where: { id },
-        data: updateData
-      });
+      let session;
+      if (legacySchema) {
+        const rows = await tx.$queryRaw`
+          UPDATE "sessions"
+          SET "name" = COALESCE(${dto.name ?? null}, "name"),
+              "environmentId" = COALESCE(${dto.environmentId ? Number(dto.environmentId) : null}, "environmentId"),
+              "startDate" = COALESCE(${dto.startDate ? new Date(dto.startDate) : null}, "startDate"),
+              "endDate" = CASE WHEN ${dto.endDate !== undefined} THEN ${dto.endDate ? new Date(dto.endDate) : null}::timestamp ELSE "endDate" END,
+              "updatedAt" = NOW()
+          WHERE "id" = ${id}
+          RETURNING *
+        `;
+        session = rows[0];
+        if (!session) throw new NotFoundException('Session not found');
+      } else {
+        session = await tx.session.update({ where: { id }, data: updateData });
+      }
 
       if (dto.moduleIds) {
         const existingModules = await tx.sessionModule.findMany({ where: { sessionId: id } });
@@ -271,8 +326,16 @@ export class SessionsService {
         }
       }
 
-      return session;
+      return legacySchema ? { ...session, closedAt: null } : session;
     });
+
+    try {
+      return await updateSessionTransaction(false);
+    } catch (error) {
+      if (!this.isMissingClosedAtColumn(error)) throw error;
+      this.logger.warn('Updating a session without the pending sessions.closedAt column. Apply pending Prisma migrations.');
+      return updateSessionTransaction(true);
+    }
   }
 
   async getSessions() {
@@ -382,32 +445,35 @@ export class SessionsService {
   }
 
   async updateSessionStatus(sessionId: string, status: string) {
-    if (status.toUpperCase() === 'FINISHED') {
-      return this.prisma.session.update({
-        where: { id: sessionId },
-        data: { 
-          status: 'Finished', 
-          isOpen: false,
-          closedAt: new Date()
-        }
-      });
+    if (typeof status !== 'string' || !status.trim()) {
+      throw new BadRequestException('Status sesi wajib diisi.');
     }
 
-    if (status.toUpperCase() === 'ON PROGRESS') {
-      return this.prisma.session.update({
-        where: { id: sessionId },
-        data: { 
-          status: 'On Progress',
-          isOpen: true,
-          closedAt: null
-        }
-      });
-    }
+    const normalized = status.trim().toUpperCase();
+    const isFinished = normalized === 'FINISHED';
+    const isInProgress = normalized === 'ON PROGRESS';
+    const nextStatus = isFinished ? 'Finished' : isInProgress ? 'On Progress' : status.trim();
+    const data = isFinished
+      ? { status: nextStatus, isOpen: false, closedAt: new Date() }
+      : isInProgress
+        ? { status: nextStatus, isOpen: true, closedAt: null }
+        : { status: nextStatus };
 
-    return this.prisma.session.update({
-      where: { id: sessionId },
-      data: { status }
-    });
+    try {
+      return await this.prisma.session.update({ where: { id: sessionId }, data });
+    } catch (error) {
+      if (!this.isMissingClosedAtColumn(error)) throw error;
+      const rows = await this.prisma.$queryRaw<Record<string, unknown>[]>`
+        UPDATE "sessions"
+        SET "status" = ${nextStatus},
+            "isOpen" = CASE WHEN ${isFinished} THEN false WHEN ${isInProgress} THEN true ELSE "isOpen" END,
+            "updatedAt" = NOW()
+        WHERE "id" = ${sessionId}
+        RETURNING *
+      `;
+      if (!rows[0]) throw new NotFoundException('Session not found');
+      return { ...rows[0], closedAt: null };
+    }
   }
 
   async getMyTasks(userId: string) {

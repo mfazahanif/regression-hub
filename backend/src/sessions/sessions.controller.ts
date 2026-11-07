@@ -2,7 +2,7 @@ import { BadRequestException, Controller, Get, Post, Patch, Delete, Body, Param,
 import type { Response } from 'express';
 import { SessionsService } from './sessions.service.js';
 import { SessionReportService } from './session-report.service.js';
-import { CreateSessionDto } from './sessions.dto.js';
+import { CreateSessionDto, UpdateSessionDto } from './sessions.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
 @Controller('sessions')
@@ -79,7 +79,7 @@ export class SessionsController {
   @Patch(':id')
   async updateSession(
     @Param('id') id: string,
-    @Body() dto: any
+    @Body() dto: UpdateSessionDto
   ) {
     const data = await this.sessionsService.updateSession(id, dto);
     return { message: 'Session updated successfully', data };

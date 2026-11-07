@@ -16,9 +16,13 @@ export class ModulesService {
   }
 
   async findAll(query: { page?: number, limit?: number, search?: string, sortBy?: string, sortOrder?: string }) {
-    const page = query.page || 1;
-    const limit = query.limit || 50;
+    const page = Number.isInteger(query.page) && query.page! > 0 ? query.page! : 1;
+    const limit = Number.isInteger(query.limit) && query.limit! > 0 ? Math.min(query.limit!, 200) : 50;
     const skip = (page - 1) * limit;
+    const sortableFields = new Set(['name', 'code', 'createdAt', 'updatedAt']);
+    const sortBy = query.sortBy === 'testcaseCount' || sortableFields.has(query.sortBy || '')
+      ? query.sortBy
+      : undefined;
 
     const where: any = { isDeleted: false };
     if (query.search) {
@@ -34,7 +38,7 @@ export class ModulesService {
         where,
         skip,
         take: limit,
-        orderBy: query.sortBy ? (query.sortBy === 'testcaseCount' ? { testcases: { _count: (query.sortOrder === 'asc' ? 'asc' : 'desc') } } : { [query.sortBy]: (query.sortOrder === 'desc' ? 'desc' : 'asc') }) : { createdAt: 'desc' },
+        orderBy: sortBy ? (sortBy === 'testcaseCount' ? { testcases: { _count: (query.sortOrder === 'asc' ? 'asc' : 'desc') } } : { [sortBy]: (query.sortOrder === 'desc' ? 'desc' : 'asc') }) : { createdAt: 'desc' },
         include: {
           _count: { select: { testcases: { where: { isDeleted: false } } } }
         }

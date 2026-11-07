@@ -58,8 +58,16 @@ export class TrashService {
     if (type === 'sessions') {
       return this.prisma.session.findMany({
         where: { isDeleted: true },
-        include: { environment: true },
-        orderBy: { deletedAt: 'desc' }
+        select: {
+          id: true,
+          name: true,
+          environmentId: true,
+          status: true,
+          isDeleted: true,
+          deletedAt: true,
+          environment: true,
+        },
+        orderBy: { deletedAt: 'desc' },
       });
     }
     if (type === 'testcases') {

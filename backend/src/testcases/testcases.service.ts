@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import * as xlsx from 'xlsx';
 
@@ -7,35 +7,29 @@ export class TestcasesService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, data: any) {
-    // 1. Get module to increment testcaseCount
-    const module = await this.prisma.module.findUnique({ where: { id: data.moduleId } });
-    if (!module) throw new NotFoundException('Module not found');
+    return this.prisma.$transaction(async tx => {
+      // 1. Get module to increment testcaseCount
+      const module = await tx.module.update({
+        where: { id: data.moduleId },
+        data: { testcaseCount: { increment: 1 } },
+      });
+      const testcaseId = `${module.code}-${String(module.testcaseCount).padStart(3, '0')}`;
 
-    const newCount = module.testcaseCount + 1;
-    await this.prisma.module.update({
-      where: { id: module.id },
-      data: { testcaseCount: newCount }
-    });
-
-    const paddedCount = String(newCount).padStart(3, '0');
-    const testcaseIdStr = `${module.code}-${paddedCount}`;
-
-    // 2. Create testcase
-    return this.prisma.masterTestcase.create({
-      data: {
-        testcaseId: testcaseIdStr,
-        moduleId: data.moduleId,
-        title: data.title,
-        description: data.description,
-        expectedResult: data.expectedResult,
-        priority: data.priority || 'Sedang',
-        severity: data.severity || 'Minor',
-        createdById: userId,
-        updatedById: userId,
-        steps: {
-          create: data.steps || []
-        }
-      }
+      // 2. Create testcase
+      return tx.masterTestcase.create({
+        data: {
+          testcaseId,
+          moduleId: data.moduleId,
+          title: data.title,
+          description: data.description,
+          expectedResult: data.expectedResult,
+          priority: data.priority || 'Sedang',
+          severity: data.severity || 'Minor',
+          createdById: userId,
+          updatedById: userId,
+          steps: { create: data.steps || [] },
+        },
+      });
     });
   }
 
@@ -70,36 +64,36 @@ export class TestcasesService {
   }
 
   async update(userId: string, id: string, data: any) {
-    const existing = await this.prisma.masterTestcase.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('Testcase not found');
+    return this.prisma.$transaction(async tx => {
+      const existing = await tx.masterTestcase.findUnique({ where: { id } });
+      if (!existing) throw new NotFoundException('Testcase not found');
 
-    // Notification if someone else updates
-    if (existing.createdById && existing.createdById !== userId) {
-      await this.prisma.testcaseNotification.create({
-        data: {
-          testcaseId: id,
-          userId: existing.createdById,
-          message: `Your testcase "${existing.testcaseId}" was updated.`,
-        }
-      });
-    }
-
-    // Delete old steps and recreate
-    if (data.steps) {
-      await this.prisma.testcaseStep.deleteMany({ where: { testcaseId: id } });
-    }
-
-    return this.prisma.masterTestcase.update({
-      where: { id },
-      data: {
-        title: data.title,
-        description: data.description,
-        expectedResult: data.expectedResult,
-        priority: data.priority,
-        severity: data.severity,
-        updatedById: userId,
-        ...(data.steps ? { steps: { create: data.steps } } : {})
+      // Notification if someone else updates
+      if (existing.createdById && existing.createdById !== userId) {
+        await tx.testcaseNotification.create({
+          data: {
+            testcaseId: id,
+            userId: existing.createdById,
+            message: `Your testcase "${existing.testcaseId}" was updated.`,
+          },
+        });
       }
+
+      // Delete old steps and recreate
+      if (data.steps) await tx.testcaseStep.deleteMany({ where: { testcaseId: id } });
+
+      return tx.masterTestcase.update({
+        where: { id },
+        data: {
+          title: data.title,
+          description: data.description,
+          expectedResult: data.expectedResult,
+          priority: data.priority,
+          severity: data.severity,
+          updatedById: userId,
+          ...(data.steps ? { steps: { create: data.steps } } : {}),
+        },
+      });
     });
   }
 
@@ -141,10 +135,17 @@ export class TestcasesService {
   }
 
   async importExcel(userId: string, fileBuffer: Buffer) {
-    const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+    let workbook: xlsx.WorkBook;
+    try {
+      workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+    } catch {
+      throw new BadRequestException('File Excel tidak dapat dibaca.');
+    }
     const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+    const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
+    if (!sheet) throw new BadRequestException('File Excel tidak memiliki worksheet.');
     const data: any[] = xlsx.utils.sheet_to_json(sheet);
+    if (data.length === 0) throw new BadRequestException('Worksheet tidak memiliki data testcase.');
 
     const groupedData = [];
     let currentTC: any = null;

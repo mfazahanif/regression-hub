@@ -6,6 +6,12 @@ import { GetTestcasesQueryDto, UpdateExecutionStatusDto } from './execution.dto.
 export class ExecutionService {
   constructor(private prisma: PrismaService) {}
 
+  private isMissingClosedAtColumn(error: unknown) {
+    const prismaError = error as { code?: string; meta?: { column?: string }; message?: string };
+    return prismaError.code === 'P2022'
+      && (prismaError.meta?.column?.includes('closedAt') || prismaError.message?.includes('closedAt'));
+  }
+
   private async markSessionInProgress(db: any, sessionId: string) {
     await db.session.updateMany({
       where: { id: sessionId, isOpen: true, status: 'TO DO' },
@@ -25,10 +31,18 @@ export class ExecutionService {
     });
 
     if (unpassed.length === 0 && executions.length > 0) {
-      await this.prisma.session.update({
-        where: { id: sessionId },
-        data: { status: 'Finished', isOpen: false, closedAt: new Date() }
-      });
+      try {
+        await this.prisma.session.update({
+          where: { id: sessionId },
+          data: { status: 'Finished', isOpen: false, closedAt: new Date() }
+        });
+      } catch (error) {
+        if (!this.isMissingClosedAtColumn(error)) throw error;
+        await this.prisma.session.updateMany({
+          where: { id: sessionId },
+          data: { status: 'Finished', isOpen: false },
+        });
+      }
     }
   }
 
@@ -234,11 +248,12 @@ export class ExecutionService {
 
     if (!execution) {
       const todoStatus = await this.prisma.status.findFirst({ where: { name: 'TO DO' } });
+      if (!todoStatus) throw new NotFoundException('Default execution status not found.');
       execution = await this.prisma.sessionExecution.create({
         data: {
           sessionId,
           testcaseId,
-          statusId: todoStatus!.id,
+          statusId: todoStatus.id,
           executedById: userId
         }
       });
